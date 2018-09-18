@@ -1,0 +1,28 @@
+@relation test
+
+@attribute text string
+@attribute Class {incorrect,correct}
+
+@data
+'int x = 0',correct
+'while(someBoolean){x = true}',correct
+'int i = 0;while (i < 3000) {System.out.println(i++);}',correct
+'boolean bool = true;while (bool) {bool = false;}',correct
+'StringBuilder arffBuilder = new StringBuilder();',correct
+'StringBuilder arffBuilder = new StringBuilder();',correct
+'StringBuilder arffBuilder = new StringBuilder();',correct
+'StringBuilder arffBuilder = new StringBuilder();',correct
+'StringBuilder arffBuilder = new StringBuilder();',correct
+'StringBuilder arffBuilder = new StringBuilder();',correct
+'StringBuilder arffBuilder = new StringBuilder();',correct
+'while(true) {System.out.println("Test1");}',incorrect
+'boolean bool = true;if (bool) {while (true) {bool = false;}}',incorrect
+'int i = 0;while(true) {System.out.println(i++);}',incorrect
+'while(true)',incorrect
+'while(true)',incorrect
+'while(true)',incorrect
+'while(true)',incorrect
+'while(true)',incorrect
+'while(true)',incorrect
+'while(true)',incorrect
+'while(true)',incorrect

@@ -4,26 +4,46 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Parser {
-    public static void main(String[] args) throws FileNotFoundException {
-        FileInputStream fis = new FileInputStream("/home/tim/uni/master/thesis/test-code/community/sketch310/" +
-                "application.linux64/source/sketch310.java");
-        CompilationUnit cu = JavaParser.parse(fis);
-        printChildNodeLines(cu);
 
-//        System.out.println(cu);
+    public static List<String> parseFiles(List<File> files) {
+        List<String> contents = new ArrayList<>();
+        for (File file : files) {
+            try (FileInputStream fis = new FileInputStream(file)) {
+                CompilationUnit cu = JavaParser.parse(fis);
+                for (Node node : cu.getChildNodes()) {
+                    // only take everything under the class definition
+                    if (node.toString().contains("class ")) {
+                        for (int i = 1; i < node.getChildNodes().size(); i++) {
+                            Node funcNode = node.getChildNodes().get(i);
+                            String content = funcNode.toString();
+                            if (!content.contains("public") && !content.contains("private")) {
+                                contents.add(content);
+                            } else if (funcNode.getChildNodes().size() > 1) {
+                                for (int j = 0; j < funcNode.getChildNodes().size(); j++) {
+                                    contents.add(funcNode.getChildNodes().get(j).toString());
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return contents;
     }
 
     public static void printChildNodeLines(Node node) {
-        if (node.getChildNodes().size() > 0) {
-            for (Node n : node.getChildNodes()) {
-                printChildNodeLines(n);
-            }
-        } else {
-            System.out.println(node + "(line " + node.getParentNodeForChildren().getParentNodeForChildren().getBegin().get().line + ")");
-        }
+        String code = node.toString();
+        System.out.println(code);
     }
 }

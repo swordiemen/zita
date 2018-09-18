@@ -1,0 +1,53 @@
+@relation test
+
+@attribute text string
+@attribute Class {incorrect,correct}
+
+@data
+'TwoNumbers',?
+'int x',?
+'int y',?
+'{    this.x = x;    this.y = y;}',?
+'getX',?
+'int',?
+'{    return x;}',?
+'setX',?
+'int x',?
+'void',?
+'{    this.x = x;}',?
+'getY',?
+'int',?
+'{    return y;}',?
+'setY',?
+'int y',?
+'void',?
+'{    this.y = y;}',?
+'printXThroughY',?
+'void',?
+'{    boolean isPassed = true;    int x = getX();    int y = getY();    if (x > y) {        isPassed = true;    }    while (isPassed) {        System.out.println(getY() - getX());    }}',?
+'TwoNumbersWithWhileTrue',?
+'int x',?
+'int y',?
+'{    this.x = x;    this.y = y;}',?
+'getX',?
+'int',?
+'{    return x;}',?
+'setX',?
+'int x',?
+'void',?
+'{    this.x = x;}',?
+'getY',?
+'int',?
+'{    return y;}',?
+'setY',?
+'int y',?
+'void',?
+'{    this.y = y;}',?
+'printXThroughY',?
+'void',?
+'{    boolean isPassed = true;    int x = getX();    int y = getY();    if (x > y) {        isPassed = true;    }    while (true) {        System.out.println(getY() - getX());    }}',?
+'main',?
+'String[] args',?
+'void',?
+'{    while (true) {        System.out.println("Test1");    }}',?
+'while(true)',?
