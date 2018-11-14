@@ -33,7 +33,7 @@ public class Transformer {
             }
         }
         StringBuilder arffBuilder = new StringBuilder();
-        arffBuilder.append("@relation test\r\n\r\n@attribute text string\r\n@attribute Class {");
+        arffBuilder.append("@relation test\r\n\r\n@attribute text string\r\n@attribute ClassArff {");
         for (String clas : getClasses()) {
             arffBuilder.append(clas).append(",");
         }
