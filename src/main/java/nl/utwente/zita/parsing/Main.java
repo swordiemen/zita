@@ -2,6 +2,8 @@ package nl.utwente.zita.parsing;
 
 import nl.utwente.zita.ast.ASTNode;
 import nl.utwente.zita.constants.Constants;
+import nl.utwente.zita.data.Data;
+import nl.utwente.zita.data.DataPoint;
 import nl.utwente.zita.util.Tuple;
 import weka.classifiers.Classifier;
 import weka.classifiers.bayes.NaiveBayes;
@@ -29,44 +31,13 @@ public class Main {
             codrFiles.addAll(Arrays.asList(file.listFiles()[0].listFiles()[0].listFiles()));
         }
 
-
-        List<File> trainFiles = codrFiles;
-        List<File> testFiles = codrFiles;
-//        List<File> trainFiles = new ArrayList<>(Arrays.asList(trainDir.listFiles()));
-//        List<File> testFiles = new ArrayList<>(Arrays.asList(testDir.listFiles()));
-
         File warnings = new File(Constants.CODR_FILES + "/../warnings.csv");
-        List<ASTNode> trainingASTs = Parser.parseFiles(trainFiles, warnings);
-        List<ASTNode> testingASTs = Parser.parseFiles(testFiles);
+        Data trainingData = new Data(codrFiles, warnings);
+        trainingData.generateDataPoints();
+        Data testData = new Data(codrFiles);
+        testData.generateDataPoints();
 
-        List<String> trainingContentsCorrect = Parser.createCorrectStrings(trainingASTs);
-        List<String> trainingContentsIncorrect = Parser.createIncorrectStrings(trainingASTs);
-        List<String> testingContents = Parser.createCorrectStrings(testingASTs);
-        Transformer transformer = new Transformer();
-        List<Tuple<String, String>> trainingData= new ArrayList<>();
-        List<Tuple<String, String>> testData = new ArrayList<>();
-        for (String content : trainingContentsCorrect) {
-            trainingData.add(new Tuple<>(content, "correct"));
-        }
-        for (String content : trainingContentsIncorrect) {
-//            System.out.println(content);
-//            System.out.println("----------------");
-            trainingData.add(new Tuple<>(content, "incorrect"));
-        }
-//        for (int i = 0; i < trainFiles.size(); i++) {
-//            File file = trainFiles.get(i);
-//            String content = trainingContents.get(i);
-//            // TODO: "Correct" part and "incorrect" part
-//            boolean incorrect = file.getName().startsWith("C");
-//            trainingData.add(new Tuple<>(content, incorrect ? "incorrect" : "correct"));
-//        }
-        for (int i = 0; i < testingContents.size(); i++) {
-            String content = testingContents.get(i);
-            testData.add(new Tuple<>(content, "?"));
-        }
-        transformer.transformToARFF(trainingData, true);
-        transformer.transformToARFF(testData, false);
-//
+
         File trainFile = new File(String.format("%s/data.arff",Constants.ARFF_TRAIN_DIR));
         File testFile = new File(String.format("%s/data.arff",Constants.ARFF_TEST_DIR));
 
@@ -91,10 +62,14 @@ public class Main {
         for(int i=0; i < test2.numInstances(); i++) {
             double index = naiveBayes.classifyInstance(test2.instance(i));
             String className = train.classAttribute().value((int) index);
-            if (className.equals("incorrect") && !test.instance(i).toString(0).contains("class")) {
-//                System.out.println(index);
+            if (!className.equals("correct") && !test.instance(i).toString(0).contains("class")) {
+                DataPoint dataPoint = trainingData.getDataPointByContent(test.instance(i));
                 System.out.println(className);
                 System.out.println(test.instance(i));
+                if (dataPoint != null) {
+                    System.out.printf("Datapoint: [%s] Line %d ~ %d%n", dataPoint.getFileName(),
+                            dataPoint.getStartLineNumber(), dataPoint.getEndLineNumber());
+                }
                 System.out.println("-------------------");
             }
         }

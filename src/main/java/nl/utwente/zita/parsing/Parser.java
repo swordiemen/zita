@@ -6,14 +6,13 @@ import com.github.javaparser.ast.Node;
 import nl.utwente.zita.ast.ASTNode;
 import nl.utwente.zita.ast.Comment;
 import nl.utwente.zita.ast.javaast.JASTNode;
+import nl.utwente.zita.util.Tuple;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Parser {
@@ -70,6 +69,9 @@ public class Parser {
      * @return a list of EXASTs corresponding to the given files
      */
     public static List<ASTNode> parseFiles(List<File> files, File commentsFile) {
+        if (commentsFile == null) {
+            return parseFiles(files);
+        }
         List<ASTNode> asts = parseFiles(files);
         List<Comment> comments = parseCommentsFile(commentsFile);
         for (ASTNode ast : asts) {
@@ -77,23 +79,13 @@ public class Parser {
             List<Comment> astSpecificComments = comments.stream()
                     .filter(c -> c.getFile().equals(ast.getFileName()))
                     .collect(Collectors.toList());
-            int i = 0;
             for (ASTNode node : ast.getAll()) {
                 for (Comment comment : astSpecificComments) {
                     if (comment.getLineNumbers().contains(node.getStartLineNumber() - 1) &&
                             node.getParent() != null && node.getParent().getStartLineNumber() != node.getStartLineNumber()) {
-                        System.out.println("Set comment \r\n" + comment.getMessage() + " \r\nto line \r\n" + node.getContent().split("\r\n")[0]
-                                + "(type = " + ((JASTNode) node).getNodeType() + ", begin=" + node.getStartLineNumber()
-                                + ", end=" + node.getEndLineNumber() + ")");
-                        System.out.println("------------------------<>");
-                        i++;
                         node.setComment(comment);
                     }
                 }
-            }
-            if (ast.getFileName().contains("248930")) {
-                System.out.println("i = " + i);
-                System.out.println(ast.getFileName() + " ---------------------------------------");
             }
         }
         return asts;
@@ -129,31 +121,41 @@ public class Parser {
         System.out.println(code);
     }
 
-    private static List<String> createStrings(List<ASTNode> asts, boolean withComment) {
-        List<String> contents = new ArrayList<>();
+
+    /**
+     * Creates a list of (String, String) tuples from a list of asts. The tuple represents the text (left), and
+     * the classification (right).
+     *
+     * @param asts the list of asts of which the tuple should be created.
+     * @return a list of tuples of format (Text, correct/incorrect)
+     */
+    public static Map<ASTNode, Map<String, String>> createStrings(List<ASTNode> asts, boolean isTrainingData) {
+        Map<ASTNode, Map<String, String>> contents = new HashMap<>();
         for (ASTNode ast : asts) {
+            contents.put(ast, new HashMap<>());
+            Map<String, String> contentForFile = contents.get(ast);
             for (ASTNode node : ast.getAll()) {
                 // only take everything under the class definition
-                if (withComment == (node.getComment() != null)) {
-                    String content = node.getContent().replace("'", ""); // TODO improve
-                    if (!content.contains("public") && !content.contains("private")) {
-                        contents.add(content);
-                    } else if (node.getChildren().size() > 1) {
-                        for (int j = 0; j < node.getChildren().size(); j++) {
-                            contents.add(node.getChildren().get(j).getContent().replace("'", "")); // TODO improve
-                        }
+                boolean isCorrect = node.getComment() == null; // no comment => correct code (assumption)
+                String classification =
+                        isTrainingData ?
+                                isCorrect ? "correct"
+                                : node.getComment().getRule()
+                            : "?"; // testing data has a "?" as classification
+                String content = node.getContent().replace("'", ""); // TODO improve
+                if (!content.contains("public") && !content.contains("private") && !content.contains("//")) {
+                    contentForFile.put(content, classification);
+                } else if (node.getChildren().size() > 1) {
+                    for (int j = 0; j < node.getChildren().size(); j++) {
+                        contentForFile.put(
+                                node.getChildren().get(j).getContent().replace("'", ""),
+                                classification
+                        );
+                        // TODO improve
                     }
                 }
             }
         }
         return contents;
-    }
-
-    public static List<String> createCorrectStrings(List<ASTNode> asts) {
-        return createStrings(asts, false);
-    }
-
-    public static List<String> createIncorrectStrings(List<ASTNode> asts) {
-        return createStrings(asts, true);
     }
 }
