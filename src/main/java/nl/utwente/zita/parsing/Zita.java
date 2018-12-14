@@ -1,10 +1,8 @@
 package nl.utwente.zita.parsing;
 
-import nl.utwente.zita.ast.ASTNode;
 import nl.utwente.zita.constants.Constants;
 import nl.utwente.zita.data.Data;
 import nl.utwente.zita.data.DataPoint;
-import nl.utwente.zita.util.Tuple;
 import weka.classifiers.Classifier;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.core.Instances;
@@ -20,9 +18,21 @@ import java.util.List;
  * @author Sjonnie
  * Created on 9/18/2018.
  */
-public class Main {
+public class Zita {
 
-    public static void main(String[] args) throws Exception {
+    private Instances train;
+    private Data trainingData;
+    private static final File TRAIN_FILE = new File(String.format("%s/data.arff",Constants.ARFF_TRAIN_DIR));
+    private static final File TEST_FILE = new File(String.format("%s/data.arff",Constants.ARFF_TEST_DIR));
+
+    public Zita() {
+    }
+
+    public void addTrainingFile(File file, File comments) {
+        trainingData.addDataPoint(file, comments);
+    }
+
+    private void init() throws Exception {
         File trainDir = new File(Constants.JAVA_TRAIN_DIR);
         File testDir = new File(Constants.JAVA_TEST_DIR);
         File codrDir = new File(Constants.CODR_FILES);
@@ -35,33 +45,32 @@ public class Main {
 
         File warnings = new File(codrDir + "/../warnings.csv");
         Data trainingData = new Data(codrFiles, warnings);
+        this.trainingData = trainingData;
         trainingData.generateDataPoints();
         Data testData = new Data(codrFiles);
         testData.generateDataPoints();
 
 
-        File trainFile = new File(String.format("%s/data.arff",Constants.ARFF_TRAIN_DIR));
-        File testFile = new File(String.format("%s/data.arff",Constants.ARFF_TEST_DIR));
 
         StringToWordVector filter = new StringToWordVector();
         Classifier naiveBayes = new NaiveBayes();
 
 
         //training data
-        Instances train = new Instances(new BufferedReader(new FileReader(trainFile)));
+        Instances train = new Instances(new BufferedReader(new FileReader(TRAIN_FILE)));
         int lastIndex = train.numAttributes() - 1;
         train.setClassIndex(lastIndex);
         filter.setInputFormat(train);
         train = Filter.useFilter(train, filter);
 
         //testing data
-        Instances test = new Instances(new BufferedReader(new FileReader(testFile)));
+        Instances test = new Instances(new BufferedReader(new FileReader(TEST_FILE)));
         test.setClassIndex(lastIndex);
         Instances test2 = Filter.useFilter(test, filter);
 
         naiveBayes.buildClassifier(train);
 
-        for(int i=0; i < test2.numInstances(); i++) {
+        for(int i = 0; i < test2.numInstances(); i++) {
             double index = naiveBayes.classifyInstance(test2.instance(i));
             String className = train.classAttribute().value((int) index);
             if (!className.equals("correct") && !test.instance(i).toString(0).contains("class")) {
@@ -75,5 +84,10 @@ public class Main {
                 System.out.println("-------------------");
             }
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        Zita zita = new Zita();
+        zita.init();
     }
 }
