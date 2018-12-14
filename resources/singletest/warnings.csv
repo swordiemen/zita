@@ -1,0 +1,3 @@
+SSN;File;Priority;Line;Description;Rule set;Rule
+s2151863;single.pde;3;104;Do not use drawing method line(float*, float*, float*, float*) in method display, display is called outside of the draw sequence and can therefore not contain drawing methods.;Processing Ruleset;DecentralizedDrawingRule
+s2151863;single.pde;3;109;Do not use drawing method ellipse(float*, float*, float, float) in method display, display is called outside of the draw sequence and can therefore not contain drawing methods.;Processing Ruleset;DecentralizedDrawingRule

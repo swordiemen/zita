@@ -14,6 +14,7 @@ public class Comment {
     private String file;
     private String ruleSet;
     private String rule;
+    // accepted/rejected/unk
 
     public Comment(int lineNumber, String message, String file, String ruleSet, String rule) {
         lineNumbers = new ArrayList<>();

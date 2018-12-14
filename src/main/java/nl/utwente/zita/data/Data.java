@@ -7,9 +7,7 @@ import nl.utwente.zita.util.Tuple;
 import weka.core.Instance;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -59,16 +57,17 @@ public class Data {
         boolean train = isTrainingData();
         List<File> files = getFiles();
         List<ASTNode> asts = Parser.parseFiles(files, getWarningFile()); // if warning file is null, makes a normal ast
-        Map<ASTNode, Map<String, String>> astToText = Parser.createStrings(asts, train);
+        Map<ASTNode, Map<ASTNode, String>> astToText = Parser.createStrings(asts, train);
         for (ASTNode ast : astToText.keySet()) {
-            for (Map.Entry<String, String> classifications : astToText.get(ast).entrySet()) {
-                String content = classifications.getKey();
+            for (Map.Entry<ASTNode, String> classifications : astToText.get(ast).entrySet()) {
+                ASTNode node = classifications.getKey();
+                String content = node.getContent().replace("'", ""); // TODO improve;
                 String classification = classifications.getValue();
-                getDataPoints().add(new DataPoint(ast, content, classification));
+                getDataPoints().add(new DataPoint(node, content, classification));
             }
         }
         // get all classifications of contents -> class
-        List<Tuple<String, String>> contentClasses = astToText.values().stream()
+        List<Tuple<ASTNode, String>> contentClasses = astToText.values().stream()
                 .flatMap(fileContents -> fileContents.entrySet().stream())
                 .map(content -> new Tuple<>(content.getKey(), content.getValue()))
                 .collect(Collectors.toList());
@@ -77,13 +76,36 @@ public class Data {
     }
 
     public DataPoint getDataPointByContent(Instance instance) {
+        String instanceContent = instance.toString(0).replaceAll("[\\s]", "");
+        instanceContent = instanceContent.substring(1, instanceContent.length() - 1);
         for (DataPoint dataPoint : getDataPoints()) {
-            String instanceContent = instance.toString(0);
-            instanceContent = instanceContent.substring(1, instanceContent.length() - 1);
             if (dataPoint.getContent().equals(instanceContent)) {
                 return dataPoint;
             }
         }
         return null;
+    }
+
+    public static void main(String[] args) {
+        Set<Integer> set = new HashSet<>();
+        for (int j = 0; j < 10; j++) {
+            set.clear();
+            for (int i = 0; i < 1000000; i++) {
+                set.add(new Random().nextInt());
+            }
+            long start = System.currentTimeMillis();
+            int count = 0;
+            for (int i : set) {
+                if (i < 1000) {
+                    count++;
+                }
+            }
+            System.out.println("Time taken (Loop ) : " + (System.currentTimeMillis() - start) + "ms, count = " + count);
+            start = System.currentTimeMillis();
+            count = (int) set.stream().filter(i -> i < 1000).count();
+            System.out.println("Time taken (Steam) : " + (System.currentTimeMillis() - start) + "ms, count = " + count);
+        }
+
+
     }
 }

@@ -14,7 +14,7 @@ public class DataPoint {
 
     public DataPoint(ASTNode tree, String content, String classification) {
         this.tree = tree;
-        this.content = content;
+        this.content = content.replaceAll("[\\s|']", "");
         this.classification = classification;
     }
 

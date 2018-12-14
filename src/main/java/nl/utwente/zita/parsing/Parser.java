@@ -41,6 +41,7 @@ public class Parser {
             }
             JASTNode node = JASTNode.createFrom(cu);
             String fileName = "Tutorial2018" + file.getAbsolutePath().split("Tutorial2018")[1];
+//            String fileName = "single.pde";
             node.setFileName(fileName);
             contents.add(node);
         }
@@ -104,7 +105,7 @@ public class Parser {
                 Comment comment = new Comment(
                         Integer.parseInt(commaSplit[3]),
                         commaSplit[4],
-                        commaSplit[1].replace("/", "\\"),
+                        commaSplit[1].replace("/", File.separator),
                         commaSplit[5],
                         commaSplit[6]
                 );
@@ -129,11 +130,11 @@ public class Parser {
      * @param asts the list of asts of which the tuple should be created.
      * @return a list of tuples of format (Text, correct/incorrect)
      */
-    public static Map<ASTNode, Map<String, String>> createStrings(List<ASTNode> asts, boolean isTrainingData) {
-        Map<ASTNode, Map<String, String>> contents = new HashMap<>();
+    public static Map<ASTNode, Map<ASTNode, String>> createStrings(List<ASTNode> asts, boolean isTrainingData) {
+        Map<ASTNode, Map<ASTNode, String>> contents = new HashMap<>();
         for (ASTNode ast : asts) {
             contents.put(ast, new HashMap<>());
-            Map<String, String> contentForFile = contents.get(ast);
+            Map<ASTNode, String> contentForFile = contents.get(ast);
             for (ASTNode node : ast.getAll()) {
                 // only take everything under the class definition
                 boolean isCorrect = node.getComment() == null; // no comment => correct code (assumption)
@@ -144,11 +145,11 @@ public class Parser {
                             : "?"; // testing data has a "?" as classification
                 String content = node.getContent().replace("'", ""); // TODO improve
                 if (!content.contains("public") && !content.contains("private") && !content.contains("//")) {
-                    contentForFile.put(content, classification);
+                    contentForFile.put(node, classification);
                 } else if (node.getChildren().size() > 1) {
                     for (int j = 0; j < node.getChildren().size(); j++) {
                         contentForFile.put(
-                                node.getChildren().get(j).getContent().replace("'", ""),
+                                node.getChildren().get(j),
                                 classification
                         );
                         // TODO improve

@@ -26,12 +26,14 @@ public class Main {
         File trainDir = new File(Constants.JAVA_TRAIN_DIR);
         File testDir = new File(Constants.JAVA_TEST_DIR);
         File codrDir = new File(Constants.CODR_FILES);
+//        File codrDir = new File("/home/tim/uni/master/thesis/zita/resources/singletest/single");
         List<File> codrFiles = new ArrayList<>();
         for (File file : codrDir.listFiles()) {
             codrFiles.addAll(Arrays.asList(file.listFiles()[0].listFiles()[0].listFiles()));
+//            codrFiles.add(file);
         }
 
-        File warnings = new File(Constants.CODR_FILES + "/../warnings.csv");
+        File warnings = new File(codrDir + "/../warnings.csv");
         Data trainingData = new Data(codrFiles, warnings);
         trainingData.generateDataPoints();
         Data testData = new Data(codrFiles);
