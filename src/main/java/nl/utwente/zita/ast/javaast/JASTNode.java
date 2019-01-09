@@ -5,10 +5,7 @@ import com.github.javaparser.ast.Node;
 import nl.utwente.zita.ast.ASTNode;
 import nl.utwente.zita.ast.Comment;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -19,7 +16,8 @@ import java.util.stream.Collectors;
  */
 public class JASTNode implements ASTNode {
 
-
+    private final static Map<String, Integer> stringIds = new HashMap<>();
+    private static int id = 1;
     private Comment comment;
     private String content;
     private int startLineNumber;
@@ -28,9 +26,11 @@ public class JASTNode implements ASTNode {
     private List<ASTNode> children;
     private String nodeType;
     private String fileName;
+    private Map<String, Object> attributes;
 
     public JASTNode() {
         children = new ArrayList<>();
+        attributes = new HashMap<>();
     }
 
     public static JASTNode createFrom(Node node) {
@@ -48,7 +48,6 @@ public class JASTNode implements ASTNode {
 //            System.out.println();
 //            astNode.printTree();
 //        }
-
         return astNode;
     }
 
@@ -74,7 +73,7 @@ public class JASTNode implements ASTNode {
     }
 
     public String getContent() {
-        return content;
+        return content.replaceAll("[\r\n \t']", "");
     }
 
     public void setContent(String content) {
@@ -133,6 +132,20 @@ public class JASTNode implements ASTNode {
         return fileName;
     }
 
+    @Override
+    public Map<String, Object> getAttributes() {
+        return attributes;
+    }
+
+    @Override
+    public Object getAttribute(String key) {
+        return getAttributes().get(key);
+    }
+
+    public void setAttribute(String key, Object value) {
+        getAttributes().put(key, value);
+    }
+
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
@@ -177,5 +190,35 @@ public class JASTNode implements ASTNode {
                 ", content='" + content + '\'' +
                 ", comment=" + comment +
                 '}';
+    }
+
+    @Override
+    public void generateAttributes() {
+        setAttribute("nodes", getNodeCount());
+        setAttribute("containingFunction", getContainingFunction());
+        setAttribute("depth", getDepth());
+//        setAttribute("content", getContent());
+    }
+
+    private int getDepth() {
+        int depth = 0;
+        ASTNode node = getParent();
+        while (node != null) {
+            node = node.getParent();
+            depth++;
+        }
+        return depth;
+    }
+
+    private int getContainingFunction() {
+        return 3;
+    }
+
+    private int getNewId() {
+        return id++;
+    }
+
+    private int getNodeCount() {
+        return getAll().size();
     }
 }

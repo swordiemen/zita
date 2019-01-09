@@ -45,6 +45,11 @@ public class Parser {
             node.setFileName(fileName);
             contents.add(node);
         }
+        for (ASTNode node : contents) {
+            for (ASTNode n : node.getAll()) {
+                n.generateAttributes();
+            }
+        }
         return contents;
     }
 

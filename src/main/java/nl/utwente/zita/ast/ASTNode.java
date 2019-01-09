@@ -1,6 +1,7 @@
 package nl.utwente.zita.ast;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -18,10 +19,26 @@ public interface ASTNode {
     String getFileName();
 
     /**
+     * Gets the value of an attribute, given its name.
+     * @return the corresponding value of the attribute, or null if there is no such attribute
+     */
+    Object getAttribute(String key);
+
+    /**
+     * Gets a list of attributes (features) and their values.
+     */
+    Map<String, Object> getAttributes();
+
+    /**
      * Gets the parent node of this node.
      * @return the parent node
      */
     ASTNode getParent();
+
+    /**
+     * Generates attributes (features) of this AST's (sub)graph.
+     */
+    void generateAttributes();
 
     /**
      * Sets the parent node of this node.
