@@ -1,9 +1,10 @@
 package nl.utwente.zita.ast.javaast;
 
-import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import nl.utwente.zita.ast.ASTNode;
 import nl.utwente.zita.ast.Comment;
+import nl.utwente.zita.data.Attribute;
+import nl.utwente.zita.parsing.Transformer;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,9 +16,14 @@ import java.util.stream.Collectors;
  * Created on 10/15/2018.
  */
 public class JASTNode implements ASTNode {
+    private static final String METHOD_CALL_PATTERN = "MethodCallExpr";
 
-    private final static Map<String, Integer> stringIds = new HashMap<>();
-    private static int id = 1;
+    private final static Map<String, Integer> functionStringIds = new HashMap<>();
+    private static int functionId = 1;
+    private final static Map<String, Integer> nodeTypeStringIds = new HashMap<>();
+    private static int nodeTypeId = 1;
+    private final static Map<String, Integer> varStringIds = new HashMap<>();
+    private static int varId = 1;
     private Comment comment;
     private String content;
     private int startLineNumber;
@@ -163,13 +169,13 @@ public class JASTNode implements ASTNode {
     @Override
     public Set<ASTNode> getAll(Set<ASTNode> set) {
         set.add(this);
-        for (ASTNode node : getChildren().stream().filter(n -> !(((JASTNode) n).isUsefulNodeType())).collect(Collectors.toList())) {
+        for (ASTNode node : getChildren().stream().filter(n -> !(((JASTNode) n).isUselessNodeType())).collect(Collectors.toList())) {
             set.addAll(node.getAll(set));
         }
         return set;
     }
 
-    private boolean isUsefulNodeType() {
+    private boolean isUselessNodeType() {
         switch (getNodeType()) {
             case "NameExpr":
             case "SimpleName":
@@ -185,7 +191,8 @@ public class JASTNode implements ASTNode {
     @Override
     public String toString() {
         return "JASTNode{" +
-                "startLineNumber=" + startLineNumber +
+                "type = " + nodeType +
+                ", startLineNumber=" + startLineNumber +
                 ", endLineNumber=" + endLineNumber +
                 ", content='" + content + '\'' +
                 ", comment=" + comment +
@@ -194,9 +201,13 @@ public class JASTNode implements ASTNode {
 
     @Override
     public void generateAttributes() {
-        setAttribute("nodes", getNodeCount());
-        setAttribute("containingFunction", getContainingFunction());
-        setAttribute("depth", getDepth());
+        setAttribute(Attribute.NODE_COUNT.getArffKey(), getNodeCount());
+        setAttribute(Attribute.DEPTH.getArffKey(), getDepth());
+        setAttribute(Attribute.USED_FUNCTION.getArffKey(), getUsedFunction());
+        setAttribute(Attribute.USED_VARIABLE.getArffKey(), getUsedVariable());
+        setAttribute(Attribute.NODE_TYPE.getArffKey(), getNodeTypeForAttr());
+        setAttribute(Attribute.CONTAINING_BLOCK.getArffKey(), getContainingBlock());
+        setAttribute(Attribute.CONTAINING_FUNCTION.getArffKey(), getContainingFunction());
 //        setAttribute("content", getContent());
     }
 
@@ -210,15 +221,120 @@ public class JASTNode implements ASTNode {
         return depth;
     }
 
-    private int getContainingFunction() {
-        return 3;
+    private String getNodeTypeForAttr() {
+        Transformer.addNominalAttribute("node_type", getNodeType());
+        return getNodeType();
     }
 
-    private int getNewId() {
-        return id++;
+    private String getUsedFunction() {
+        ASTNode node = getNodeWithNodeTypeBF(METHOD_CALL_PATTERN);
+        String method = "None";
+        if (node != null) {
+            // Replace the variable part of the function call (>foo.<method()) and the parameter call
+            // since we're only interested in the method name
+//            method = getContent().split("[(]")[0].replaceAll("[(),]", "").replaceFirst("(.)*\\.", "");
+            method = node.getNodeWithNodeTypeBF("SimpleName").getContent();
+        }
+        Transformer.addNominalAttribute("used_function", method);
+        Transformer.addFunctionCall(method);
+        return method;
+    }
+
+    private String getUsedVariable() {
+        return "UnImpl";
+    }
+
+    private int getNodeTypeAsInt() {
+        String nodeType = getNodeType();
+        if (!nodeTypeStringIds.containsKey(nodeType)) {
+            nodeTypeStringIds.put(nodeType, getNewNodeTypeId());
+        }
+        return nodeTypeStringIds.get(nodeType);
+    }
+
+    private String getContainingBlock() {
+        JASTNode node = this;
+        String nodeType = node.getNodeType();
+        while (node != null && !isBlockNodeType(nodeType)) {
+            node = (JASTNode) node.getParent();
+            if (node == null) {
+                nodeType = "None";
+            } else {
+                nodeType = node.getNodeType();
+            }
+        }
+        Transformer.addNominalAttribute("containing_block", nodeType);
+        return nodeType;
+    }
+
+    private String getContainingFunction() {
+        JASTNode node = this;
+        String nodeType = node.getNodeType();
+        while (node != null && !isFunctionNode(nodeType)) {
+            node = (JASTNode) node.getParent();
+            if (node != null) {
+                nodeType = node.getNodeType();
+            }
+        }
+        String methodName = "None";
+        if (node != null) {
+            node = (JASTNode) node.getNodeWithNodeTypeBF("SimpleName"); // First occurrence of simple name is the method's name
+            methodName = node.getContent();
+        }
+        Transformer.addNominalAttribute("containing_function", methodName);
+        Transformer.addFunctionCall(methodName);
+        return methodName;
+    }
+
+    private int getNewFunctionId() {
+        return functionId++;
+    }
+
+    private int getNewVarId() {
+        return varId++;
+    }
+
+    private int getNewNodeTypeId() {
+        return nodeTypeId++;
     }
 
     private int getNodeCount() {
         return getAll().size();
+    }
+
+    public ASTNode getNodeWithNodeTypeBF(String nodeType) {
+        if (getNodeType().equals(nodeType)) {
+            return this;
+        }
+        ASTNode node = null;
+        for (ASTNode n : getChildren()) {
+            if (nodeType.equals(n.getNodeType())) {
+                return n;
+            }
+        }
+        for (ASTNode n : getChildren()) {
+            node = n.getNodeWithNodeTypeBF(nodeType);
+            if (node != null) {
+                return node;
+            }
+        }
+        return node;
+    }
+
+    private static boolean isBlockNodeType(String nodeType) {
+        switch (nodeType) {
+            case "IfStmt":
+            case "ForEachStmt":
+            case "ForStmt":
+            case "LocalClassDeclarationStmt":
+            case "SwitchStmt":
+            case "WhileStmt":
+                return true;
+        }
+        return false;
+    }
+
+    private static boolean isFunctionNode(String nodeType) {
+        return "MethodDeclaration".equals(nodeType);
     }
 }

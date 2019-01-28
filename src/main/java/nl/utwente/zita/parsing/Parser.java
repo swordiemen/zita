@@ -6,6 +6,7 @@ import com.github.javaparser.ast.Node;
 import nl.utwente.zita.ast.ASTNode;
 import nl.utwente.zita.ast.Comment;
 import nl.utwente.zita.ast.javaast.JASTNode;
+import nl.utwente.zita.constants.Constants;
 import nl.utwente.zita.util.Tuple;
 
 import java.io.File;
@@ -27,24 +28,33 @@ public class Parser {
      */
     public static List<ASTNode> parseFiles(List<File> files) {
         List<ASTNode> contents = new ArrayList<>();
+        int errorCount = 0;
         for (File file : files) {
             String code = readFile(file);
             if (file.getName().endsWith(".pde")) {
                 code = START_JAVA_CODE + code + END_JAVA_CODE;
+                // 2017: ignore pde files
+//                continue;
             }
             CompilationUnit cu;
             try {
                 cu = JavaParser.parse(code);
             } catch (Exception e) {
                 System.err.println(String.format("Error when parsing file %s, skipping.)", file.getAbsolutePath()));
+                errorCount++;
                 continue;
             }
             JASTNode node = JASTNode.createFrom(cu);
+
+            // 2018
             String fileName = "Tutorial2018" + file.getAbsolutePath().split("Tutorial2018")[1];
-//            String fileName = "single.pde";
+            // 2017
+//            String fileName = file.getAbsolutePath().split(Constants.CSEDU_SUBFOLDER)[1];
+
             node.setFileName(fileName);
             contents.add(node);
         }
+        System.err.println("Encountered " + errorCount + " unparsabale files.");
         for (ASTNode node : contents) {
             for (ASTNode n : node.getAll()) {
                 n.generateAttributes();
@@ -105,6 +115,7 @@ public class Parser {
             scanner.nextLine(); // to skip the CSV column definitions
             while (scanner.hasNextLine()) {
                 line = scanner.nextLine();
+                // 2018:
                 // ID[0], File[1], Priority[2], Line[3], Description[4], Rule set[5], Rule[6]
                 String[] commaSplit = line.split(";");
                 Comment comment = new Comment(
@@ -114,6 +125,18 @@ public class Parser {
                         commaSplit[5],
                         commaSplit[6]
                 );
+
+                // 2017:
+                // ID[0], Package[1], File[2], Priority[3], Line[4], Description[5], Rule set[6], Rule[7]
+//                String[] commaSplit = line.split(";");
+//                Comment comment = new Comment(
+//                        Integer.parseInt(commaSplit[3]),
+//                        commaSplit[5],
+//                        commaSplit[2].replace("/", File.separator).split(Constants.CSEDU_SUBFOLDER)[1],
+//                        commaSplit[6],
+//                        commaSplit[7]
+//                );
+
                 comments.add(comment);
             }
         } catch (FileNotFoundException e) {
@@ -146,8 +169,8 @@ public class Parser {
                 String classification =
                         isTrainingData ?
                                 isCorrect ? "correct"
-                                : node.getComment().getRule()
-                            : "?"; // testing data has a "?" as classification
+                                        : node.getComment().getRule()
+                                : "?"; // testing data has a "?" as classification
                 String content = node.getContent().replace("'", ""); // TODO improve
                 if (!content.contains("public") && !content.contains("private") && !content.contains("//")) {
                     contentForFile.put(node, classification);

@@ -105,4 +105,8 @@ public interface ASTNode {
 
     Set<ASTNode> getAll();
     Set<ASTNode> getAll(Set<ASTNode> set);
+
+    String getNodeType();
+
+    ASTNode getNodeWithNodeTypeBF(String nodeType);
 }

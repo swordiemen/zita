@@ -38,12 +38,18 @@ public class Zita {
         File codrDir = new File(Constants.CODR_FILES);
 //        File codrDir = new File("/home/tim/uni/master/thesis/zita/resources/singletest/single");
         List<File> codrFiles = new ArrayList<>();
+
         for (File file : codrDir.listFiles()) {
-            codrFiles.addAll(Arrays.asList(file.listFiles()[0].listFiles()[0].listFiles()));
+            if (file.isDirectory()) {
+                codrFiles.addAll(Arrays.asList(file.listFiles()[0].listFiles()[0].listFiles()));
+            }
 //            codrFiles.add(file);
         }
 
-        File warnings = new File(codrDir + "/../warnings.csv");
+        // 2018
+        File warnings = new File(codrDir + "/../warnings-cutoff.csv");
+        // 2017
+//        File warnings = new File(codrDir + "/warnings-ssv.csv");
         Data trainingData = new Data(codrFiles, warnings);
         this.trainingData = trainingData;
         trainingData.generateDataPoints();

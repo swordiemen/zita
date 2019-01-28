@@ -117,26 +117,5 @@ public class Data {
         return null;
     }
 
-    public static void main(String[] args) {
-        Set<Integer> set = new HashSet<>();
-        for (int j = 0; j < 10; j++) {
-            set.clear();
-            for (int i = 0; i < 1000000; i++) {
-                set.add(new Random().nextInt());
-            }
-            long start = System.currentTimeMillis();
-            int count = 0;
-            for (int i : set) {
-                if (i < 1000) {
-                    count++;
-                }
-            }
-            System.out.println("Time taken (Loop ) : " + (System.currentTimeMillis() - start) + "ms, count = " + count);
-            start = System.currentTimeMillis();
-            count = (int) set.stream().filter(i -> i < 1000).count();
-            System.out.println("Time taken (Steam) : " + (System.currentTimeMillis() - start) + "ms, count = " + count);
-        }
 
-
-    }
 }
