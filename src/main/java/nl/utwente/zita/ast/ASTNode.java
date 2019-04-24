@@ -87,7 +87,7 @@ public interface ASTNode {
     Comment getComment();
 
     /**
-     * Sets the comment of this node.
+     * Add a comment to this node.
      */
     void setComment(Comment comment);
 

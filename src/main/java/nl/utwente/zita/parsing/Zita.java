@@ -11,7 +11,6 @@ import weka.filters.unsupervised.attribute.StringToWordVector;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -20,10 +19,13 @@ import java.util.List;
  */
 public class Zita {
 
+    public static final boolean USE_2018 = true;
+
     private Instances train;
     private Data trainingData;
     private static final File TRAIN_FILE = new File(String.format("%s/data.arff",Constants.ARFF_TRAIN_DIR));
     private static final File TEST_FILE = new File(String.format("%s/data.arff",Constants.ARFF_TEST_DIR));
+
 
     public Zita() {
     }
@@ -35,21 +37,29 @@ public class Zita {
     private void init() throws Exception {
         File trainDir = new File(Constants.JAVA_TRAIN_DIR);
         File testDir = new File(Constants.JAVA_TEST_DIR);
-        File codrDir = new File(Constants.CODR_FILES);
-//        File codrDir = new File("/home/tim/uni/master/thesis/zita/resources/singletest/single");
+        File codrDir;
+        if (USE_2018) {
+            // 2018
+            codrDir = new File(Constants.CODR_FILES);
+        } else {
+            // 2017
+            codrDir = new File(Constants.CSEDU_FILES);
+        }
         List<File> codrFiles = new ArrayList<>();
 
         for (File file : codrDir.listFiles()) {
-            if (file.isDirectory()) {
-                codrFiles.addAll(Arrays.asList(file.listFiles()[0].listFiles()[0].listFiles()));
-            }
-//            codrFiles.add(file);
+            lookForPdeFiles(file, codrFiles);
         }
 
-        // 2018
-        File warnings = new File(codrDir + "/../warnings-cutoff.csv");
-        // 2017
-//        File warnings = new File(codrDir + "/warnings-ssv.csv");
+        File warnings;
+        if (USE_2018) {
+            // 2018
+            warnings = new File(codrDir + "/../warnings.csv");
+        } else {
+            // 2017
+            warnings = new File(codrDir + "/warnings-ssv.csv");
+        }
+
         Data trainingData = new Data(codrFiles, warnings);
         this.trainingData = trainingData;
         trainingData.generateDataPoints();
@@ -88,6 +98,18 @@ public class Zita {
                             dataPoint.getStartLineNumber(), dataPoint.getEndLineNumber());
                 }
                 System.out.println("-------------------");
+            }
+        }
+    }
+
+    private void lookForPdeFiles(File sourceDir, List<File> destList) {
+        if (sourceDir.isDirectory()) {
+            for (File file : sourceDir.listFiles()) {
+                if (file.isDirectory()) {
+                    lookForPdeFiles(file, destList);
+                } else if (file.getName().endsWith(".pde")) {
+                    destList.add(file);
+                }
             }
         }
     }

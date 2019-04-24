@@ -14,7 +14,7 @@ public class Comment {
     private String file;
     private String ruleSet;
     private String rule;
-    // accepted/rejected/unk
+    private CommentState state = CommentState.NEUTRAL; // default state
 
     public Comment(int lineNumber, String message, String file, String ruleSet, String rule) {
         lineNumbers = new ArrayList<>();
@@ -50,7 +50,7 @@ public class Comment {
     }
 
     public String getFile() {
-        return file;
+        return file.replace("P4WCIproject.java", "");
     }
 
     public void setFile(String file) {
@@ -71,6 +71,18 @@ public class Comment {
 
     public void setRule(String rule) {
         this.rule = rule;
+    }
+
+    public void setLineNumbers(List<Integer> lineNumbers) {
+        this.lineNumbers = lineNumbers;
+    }
+
+    public CommentState getState() {
+        return state;
+    }
+
+    public void setState(CommentState state) {
+        this.state = state;
     }
 
     @Override

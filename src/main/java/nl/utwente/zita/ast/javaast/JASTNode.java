@@ -74,6 +74,7 @@ public class JASTNode implements ASTNode {
         return comment;
     }
 
+    @Override
     public void setComment(Comment comment) {
         this.comment = comment;
     }

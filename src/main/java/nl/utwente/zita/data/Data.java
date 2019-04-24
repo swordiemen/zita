@@ -56,9 +56,18 @@ public class Data {
     }
 
     public void generateDataPoints() {
+        Map<String, Integer> info = new HashMap<>();
         boolean train = isTrainingData();
         List<File> files = getFiles();
         List<ASTNode> asts = Parser.parseFiles(files, getWarningFile()); // if warning file is null, makes a normal ast
+        int count = asts.size();
+        System.out.println("Count = " + count);
+        for (ASTNode ast : asts) {
+            // get general data
+            info.put("nodes", info.getOrDefault("nodes", 0) + ast.getAll().size() + 1);
+            info.put("lines", info.getOrDefault("lines", 0) + ast.getEndLineNumber());
+
+        }
         Map<ASTNode, Map<ASTNode, String>> astToText = Parser.createStrings(asts, train);
         for (ASTNode ast : astToText.keySet()) {
             for (Map.Entry<ASTNode, String> classifications : astToText.get(ast).entrySet()) {
@@ -66,8 +75,17 @@ public class Data {
                 String content = node.getContent().replace("'", ""); // TODO improve;
                 String classification = classifications.getValue();
                 getDataPoints().add(new DataPoint(node, content, classification));
+                if (classification.equalsIgnoreCase("correct")) {
+                    info.put("correct", info.getOrDefault("correct", 0) + 1);
+                } else {
+                    info.put("incorrect", info.getOrDefault("incorrect", 0) + 1);
+
+                }
             }
         }
+        System.out.println("INFO------------------------");
+        System.out.println(info);
+        info.forEach((k, v) -> System.out.println(k + "=" + ((double) v/count)));
         getAstToTexts().putAll(astToText);
         List<Tuple<ASTNode, String>> contentClasses = getContentClassifications();
         getTransformer().transformToARFF(contentClasses, train);
@@ -116,6 +134,5 @@ public class Data {
         }
         return null;
     }
-
 
 }
