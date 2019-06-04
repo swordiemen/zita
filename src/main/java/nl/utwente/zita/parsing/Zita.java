@@ -19,7 +19,7 @@ import java.util.List;
  */
 public class Zita {
 
-    public static final boolean USE_2018 = true;
+    public static final boolean USE_2018 = false;
 
     private Instances train;
     private Data trainingData;

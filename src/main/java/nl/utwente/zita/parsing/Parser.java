@@ -7,6 +7,7 @@ import nl.utwente.zita.ast.ASTNode;
 import nl.utwente.zita.ast.Comment;
 import nl.utwente.zita.ast.javaast.JASTNode;
 import nl.utwente.zita.constants.Constants;
+import nl.utwente.zita.util.Util;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,13 +30,25 @@ public class Parser {
         for (File file : files) {
             String code = readFile(file);
             if (file.getName().endsWith(".pde")) {
+                // hacks to make  processing conversion work for java parsing
                 code = START_JAVA_CODE + code + END_JAVA_CODE;
+                code = code.replace("int(", "toInt(");
+                code = code.replace("int (", "toInt (");
+                code = code.replace(" = #", " = 0x");
+                code = code.replace("(#", "(0x");
+                code = code.replaceAll("import(.)*;", "");
+                while ((Util.countChars('}', code) - Util.countChars('{', code) < 2)) {
+                    code += END_JAVA_CODE;
+                }
             }
             CompilationUnit cu;
             try {
                 cu = JavaParser.parse(code);
             } catch (Exception e) {
-//                System.err.println(String.format("Error parsing file %s, skipping.)", file.getAbsolutePath()));
+                int begin = Util.countChars('{', code);
+                int end = Util.countChars('}', code);
+//                e.printStackTrace();
+                System.err.println(String.format("Error parsing file %s, skipping.)", file.getAbsolutePath()));
                 errorCount++;
                 continue;
             }
@@ -89,6 +102,7 @@ public class Parser {
         }
         List<ASTNode> asts = parseFiles(files);
         List<Comment> comments = parseCommentsFile(commentsFile);
+        List<Comment> unlinked = new ArrayList<>(comments);
         int linked = 0;
         for (ASTNode ast : asts) {
             // not very efficient
@@ -99,10 +113,8 @@ public class Parser {
                 for (Comment comment : astSpecificComments) {
                     if (comment.getLineNumbers().contains(node.getStartLineNumber()) &&
                             node.getParent() != null && node.getParent().getStartLineNumber() != node.getStartLineNumber()) {
-                        if (node.getComment() != null) {
-                            System.out.println("Wat");
-                        }
                         node.setComment(comment);
+                        unlinked.remove(comment);
                         linked++;
                     }
                 }

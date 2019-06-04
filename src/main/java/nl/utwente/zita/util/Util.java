@@ -25,4 +25,14 @@ public class Util {
             throw new UnsupportedOperationException("Unsupported class type " + o.getClass());
         }
     }
+
+    public static int countChars(char c, String str) {
+        int count = c;
+        for (char c1 : str.toCharArray()) {
+            if (c1 == c) {
+                count++;
+            }
+        }
+        return count;
+    }
 }
